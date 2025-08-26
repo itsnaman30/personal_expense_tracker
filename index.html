@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="author" content="Dennis">
+  <meta name="description" content="Expense Tracker Application">
+  <title>Expense Tracker</title>
+
+  <!-- Bootstrap CSS (via CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Bootstrap Icons (via CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <style>
+    body {
+      background-color: #f9f9f9;
+    }
+    #totalSpent {
+      color: #198754;
+      font-weight: bold;
+    }
+    table {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a href="#" class="navbar-brand">
+        <img src="vendor/logo.png"
+             class="img-fluid" alt="logo" width="35">
+      </a>
+      <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbar">
+        <div class="navbar-nav ms-auto">
+          <a class="nav-link active" href="#">Home</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <label class="text-success"><b>Total Spent: </b></label>
+        <b><span id="totalSpent">0</span></b>
+      </div>
+      <div>
+        <button type="button" class="btn btn-outline-primary" onclick="showExpenseModal()">Add Expense</button>
+      </div>
+    </div>
+
+    <!-- Expense List Table -->
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Expense Name</th>
+          <th>Amount</th>
+          <th>Action</th> <!-- Added Action column -->
+        </tr>
+      </thead>
+      <tbody id="expenseTableBody">
+        <tr><td colspan="4" class="text-center">No expenses added yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="addExpenseModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Expense</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="expenseForm">
+            <div class="mb-3">
+              <label class="form-label">Expense Name</label>
+              <input type="text" class="form-control" id="expenseName" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Amount</label>
+              <input type="number" class="form-control" id="expenseAmount" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" onclick="saveExpense()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery (via CDN) -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Popper.js (via CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+  <!-- Bootstrap JS (via CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+  <!-- JavaScript -->
+  <script>
+    // Show Modal
+    function showExpenseModal() {
+      var modal = new bootstrap.Modal(document.getElementById('addExpenseModal'));
+      modal.show();
+    }
+
+    // Save Expense
+    function saveExpense() {
+      let name = $("#expenseName").val();
+      let amount = $("#expenseAmount").val();
+
+      if (!name || !amount) return;
+
+      let storageObject = localStorage.getItem("expenseStorage");
+      let storageArr = storageObject ? JSON.parse(storageObject) : [];
+
+      storageArr.push({ name: name, spent: amount });
+      localStorage.setItem("expenseStorage", JSON.stringify(storageArr));
+
+      $("#expenseForm")[0].reset();
+      getTotalExpenditure();
+      loadExpenseList();
+
+      // Close modal
+      var modal = bootstrap.Modal.getInstance(document.getElementById('addExpenseModal'));
+      modal.hide();
+    }
+
+    // Delete Expense
+    function deleteExpense(index) {
+      let storageObject = localStorage.getItem("expenseStorage");
+      if (!storageObject) return;
+
+      let storageArr = JSON.parse(storageObject);
+      storageArr.splice(index, 1); // remove by index
+      localStorage.setItem("expenseStorage", JSON.stringify(storageArr));
+
+      getTotalExpenditure();
+      loadExpenseList();
+    }
+
+    // Get Total Expenditure
+    function getTotalExpenditure() {
+      let storageObject = localStorage.getItem("expenseStorage");
+      let spent = 0;
+
+      if (storageObject) {
+        let storageArr = JSON.parse(storageObject);
+        for (let i in storageArr) {
+          spent += parseInt(storageArr[i]["spent"]);
+        }
+      }
+      $("#totalSpent").html(spent);
+    }
+
+    // Load Expense List
+    function loadExpenseList() {
+      let storageObject = localStorage.getItem("expenseStorage");
+      let html = "";
+
+      if (storageObject) {
+        let storageArr = JSON.parse(storageObject);
+
+        if (storageArr.length > 0) {
+          storageArr.forEach((item, index) => {
+            html += `<tr>
+                      <td>${index + 1}</td>
+                      <td>${item.name}</td>
+                      <td>${item.spent}</td>
+                      <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteExpense(${index})">
+                          <i class="bi bi-trash"></i> Delete
+                        </button>
+                      </td>
+                    </tr>`;
+          });
+        } else {
+          html = `<tr><td colspan="4" class="text-center">No expenses added yet</td></tr>`;
+        }
+      } else {
+        html = `<tr><td colspan="4" class="text-center">No expenses added yet</td></tr>`;
+      }
+
+      $("#expenseTableBody").html(html);
+    }
+
+    // Run on page load
+    $(document).ready(function () {
+      getTotalExpenditure();
+      loadExpenseList();
+    });
+  </script>
+</body>
+</html>
+
+
